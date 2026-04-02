@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, nextTick } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 const token = ref(localStorage.getItem('token') || '');
@@ -71,11 +71,6 @@ const categories = [
   { id: 'study', name: 'Học tập', color: '#f59e0b', icon: '📚' }
 ];
 
-const priorityConfig = {
-  high: { label: 'Cao', color: '#ef4444', bg: '#fee2e2' },
-  medium: { label: 'Trung bình', color: '#f59e0b', bg: '#fef3c7' },
-  low: { label: 'Thấp', color: '#10b981', bg: '#d1fae5' },
-};
 
 // ===== COMPUTED =====
 const stats = computed(() => ({
@@ -135,9 +130,6 @@ const filteredTodos = computed(() => {
   return result;
 });
 
-const overdueCount = computed(() =>
-  todos.value.filter(t => !t.completed && t.deadline && new Date(t.deadline) < new Date()).length
-);
 
 // ===== TOAST =====
 const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
@@ -262,26 +254,8 @@ const saveProgress = async () => {
   }
 };
 
-// Bulk actions
-const markAllComplete = async () => {
-  const pending = todos.value.filter(t => !t.completed);
-  for (const t of pending) await toggleComplete(t);
-  showToast(`✅ Đã hoàn thành ${pending.length} công việc!`);
-};
-
-const clearCompleted = async () => {
-  const completed = todos.value.filter(t => t.completed);
-  for (const t of completed) {
-    await axios.delete(`${API_URL}/${t._id}`);
-  }
-  todos.value = todos.value.filter(t => !t.completed);
-  showToast(`🗑️ Đã xóa ${completed.length} công việc đã hoàn thành`);
-};
 
 // Helpers
-const isOverdue = (deadline?: string) =>
-  !!deadline && !isNaN(new Date(deadline).getTime()) && new Date(deadline) < new Date();
-
 const formatDate = (dateString?: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
