@@ -13,7 +13,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ========== MIDDLEWARE ==========
-app.use(cors()); // Cho phép gọi API từ tên miền khác (như Vue ở cổng 5173)
+app.use(cors({
+  origin: '*', 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+})); // Cho phép gọi API từ tên miền khác (như Vue ở cổng 5173)
 app.use(express.json()); // Giúp Express đọc được dữ liệu JSON gửi lên
 
 // ========== DATABASE CONNECTION ==========
