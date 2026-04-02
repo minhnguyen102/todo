@@ -1,0 +1,92 @@
+import { Request, Response } from 'express';
+import { TodoService } from '../services/todoService';
+import { AuthRequest } from '../middleware/authMiddleware';
+
+export class TodoController {
+  // Lấy tất cả công việc
+  static async getAllTodos(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const todos = await TodoService.getAllTodos(req.userId as string);
+      res.json(todos);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  }
+
+  // Lấy công việc theo ID
+  static async getTodoById(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const todo = await TodoService.getTodoById(req.userId as string, req.params.id as string);
+      if (!todo) {
+        res.status(404).json({ message: 'Không tìm thấy công việc' });
+        return;
+      }
+      res.json(todo);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  }
+
+  // Tạo công việc mới
+  static async createTodo(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { title, description, deadline, category, priority, progressText, progressPercent } = req.body;
+
+      if (!title) {
+        res.status(400).json({ message: 'Tiêu đề là bắt buộc' });
+        return;
+      }
+
+      const newTodo = await TodoService.createTodo(
+        req.userId as string,
+        title,
+        description,
+        deadline ? new Date(deadline) : undefined,
+        category,
+        priority,
+        progressText,
+        progressPercent
+      );
+      res.status(201).json(newTodo);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  // Cập nhật công việc
+  static async updateTodo(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { title, description, completed, deadline, category, progressText, progressPercent } = req.body;
+      const updateData: any = {};
+
+      if (title !== undefined) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (completed !== undefined) updateData.completed = completed;
+      if (deadline !== undefined) updateData.deadline = deadline ? new Date(deadline) : null;
+      if (category !== undefined) updateData.category = category;
+      if (progressText !== undefined) updateData.progressText = progressText;
+      if (progressPercent !== undefined) updateData.progressPercent = progressPercent;
+
+      const updatedTodo = await TodoService.updateTodo(req.userId as string, req.params.id as string, updateData);
+
+      if (!updatedTodo) {
+        res.status(404).json({ message: 'Không tìm thấy công việc' });
+        return;
+      }
+
+      res.json(updatedTodo);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  // Xóa công việc
+  static async deleteTodo(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      await TodoService.deleteTodo(req.userId as string, req.params.id as string);
+      res.json({ message: 'Đã xóa công việc' });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+}
