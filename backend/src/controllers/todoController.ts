@@ -1,12 +1,11 @@
 import { Request, Response } from 'express';
 import { TodoService } from '../services/todoService';
-import { AuthRequest } from '../middleware/authMiddleware';
 
 export class TodoController {
   // Lấy tất cả công việc
-  static async getAllTodos(req: AuthRequest, res: Response): Promise<void> {
+  static async getAllTodos(req: Request, res: Response): Promise<void> {
     try {
-      const todos = await TodoService.getAllTodos(req.userId as string);
+      const todos = await TodoService.getAllTodos();
       res.json(todos);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
@@ -14,9 +13,9 @@ export class TodoController {
   }
 
   // Lấy công việc theo ID
-  static async getTodoById(req: AuthRequest, res: Response): Promise<void> {
+  static async getTodoById(req: Request, res: Response): Promise<void> {
     try {
-      const todo = await TodoService.getTodoById(req.userId as string, req.params.id as string);
+      const todo = await TodoService.getTodoById(req.params.id as string);
       if (!todo) {
         res.status(404).json({ message: 'Không tìm thấy công việc' });
         return;
@@ -28,7 +27,7 @@ export class TodoController {
   }
 
   // Tạo công việc mới
-  static async createTodo(req: AuthRequest, res: Response): Promise<void> {
+  static async createTodo(req: Request, res: Response): Promise<void> {
     try {
       const { title, description, deadline, category, priority, progressText, progressPercent } = req.body;
 
@@ -38,7 +37,6 @@ export class TodoController {
       }
 
       const newTodo = await TodoService.createTodo(
-        req.userId as string,
         title,
         description,
         deadline ? new Date(deadline) : undefined,
@@ -54,7 +52,7 @@ export class TodoController {
   }
 
   // Cập nhật công việc
-  static async updateTodo(req: AuthRequest, res: Response): Promise<void> {
+  static async updateTodo(req: Request, res: Response): Promise<void> {
     try {
       const { title, description, completed, deadline, category, progressText, progressPercent } = req.body;
       const updateData: any = {};
@@ -67,7 +65,7 @@ export class TodoController {
       if (progressText !== undefined) updateData.progressText = progressText;
       if (progressPercent !== undefined) updateData.progressPercent = progressPercent;
 
-      const updatedTodo = await TodoService.updateTodo(req.userId as string, req.params.id as string, updateData);
+      const updatedTodo = await TodoService.updateTodo(req.params.id as string, updateData);
 
       if (!updatedTodo) {
         res.status(404).json({ message: 'Không tìm thấy công việc' });
@@ -81,9 +79,9 @@ export class TodoController {
   }
 
   // Xóa công việc
-  static async deleteTodo(req: AuthRequest, res: Response): Promise<void> {
+  static async deleteTodo(req: Request, res: Response): Promise<void> {
     try {
-      await TodoService.deleteTodo(req.userId as string, req.params.id as string);
+      await TodoService.deleteTodo(req.params.id as string);
       res.json({ message: 'Đã xóa công việc' });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });

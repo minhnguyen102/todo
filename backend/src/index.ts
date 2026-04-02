@@ -3,8 +3,6 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import todoRoutes from './routes/todoRoutes';
-import authRoutes from './routes/authRoutes';
-import { protect } from './middleware/authMiddleware';
 
 // Nạp các biến môi trường từ file .env
 dotenv.config();
@@ -27,8 +25,7 @@ mongoose.connect(process.env.MONGODB_URI as string)
   .catch((err) => console.error('❌ Lỗi kết nối MongoDB:', err));
 
 // ========== ROUTES ==========
-app.use('/api/auth', authRoutes);
-app.use('/api/todos', protect, todoRoutes);
+app.use('/api/todos', todoRoutes);
 
 // ========== HEALTH CHECK ==========
 app.get('/api/health', (req, res) => {

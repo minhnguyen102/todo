@@ -1,29 +1,28 @@
 import Todo, { ITodo } from '../models/Todo';
 
 export class TodoService {
-  // Lấy tất cả công việc của user (loại trừ đã xóa mềm)
-  static async getAllTodos(userId: string): Promise<ITodo[]> {
+  // Lấy tất cả công việc (loại trừ đã xóa mềm)
+  static async getAllTodos(): Promise<ITodo[]> {
     try {
-      return await Todo.find({ userId, deleted: { $ne: true } }).sort({ createdAt: -1 });
+      return await Todo.find({ deleted: { $ne: true } }).sort({ createdAt: -1 });
     } catch (error) {
       throw new Error('Lỗi khi lấy danh sách công việc');
     }
   }
 
   // Lấy công việc theo ID
-  static async getTodoById(userId: string, id: string): Promise<ITodo | null> {
+  static async getTodoById(id: string): Promise<ITodo | null> {
     try {
-      return await Todo.findOne({ _id: id, userId, deleted: { $ne: true } });
+      return await Todo.findOne({ _id: id, deleted: { $ne: true } });
     } catch (error) {
       throw new Error('Lỗi khi lấy công việc');
     }
   }
 
   // Tạo công việc mới
-  static async createTodo(userId: string, title: string, description?: string, deadline?: Date, category?: string, priority?: string, progressText?: string, progressPercent?: number): Promise<ITodo> {
+  static async createTodo(title: string, description?: string, deadline?: Date, category?: string, priority?: string, progressText?: string, progressPercent?: number): Promise<ITodo> {
     try {
       const newTodo = new Todo({
-        userId,
         title,
         description,
         deadline,
@@ -46,7 +45,6 @@ export class TodoService {
 
   // Cập nhật công việc
   static async updateTodo(
-    userId: string,
     id: string,
     updateData: {
       title?: string;
@@ -67,9 +65,6 @@ export class TodoService {
       const updateQuery: any = { $set: updateData };
 
       if (updateData.progressPercent !== undefined || updateData.progressText !== undefined) {
-        // Fetch current todo to get values if one is missing, but $push doesn't allow easy fallback in one query.
-        // It's better to just push what we received, or let the controller provide both.
-        // Actually we can just push directly since the controller sets them together typically.
         updateQuery.$push = {
           progressHistory: {
             text: updateData.progressText || '',
@@ -79,29 +74,27 @@ export class TodoService {
         };
       }
 
-      return await Todo.findOneAndUpdate({ _id: id, userId }, updateQuery, { returnDocument: 'after' });
+      return await Todo.findOneAndUpdate({ _id: id }, updateQuery, { returnDocument: 'after' });
     } catch (error) {
       throw new Error('Lỗi khi cập nhật công việc');
     }
   }
 
   // Xóa mềm công việc
-  static async deleteTodo(userId: string, id: string): Promise<void> {
+  static async deleteTodo(id: string): Promise<void> {
     try {
-      await Todo.findOneAndUpdate({ _id: id, userId }, { deleted: true });
+      await Todo.findOneAndUpdate({ _id: id }, { deleted: true });
     } catch (error) {
       throw new Error('Lỗi khi xóa công việc');
     }
   }
 
-  // Các hàm lọc (nếu dùng) -> Tạm ẩn hoặc cập nhật luôn
-  static async getTodosByStatus(userId: string, completed: boolean): Promise<ITodo[]> {
+  // Các hàm lọc (nếu dùng)
+  static async getTodosByStatus(completed: boolean): Promise<ITodo[]> {
     try {
-      return await Todo.find({ userId, completed, deleted: { $ne: true } }).sort({ deadline: 1 });
+      return await Todo.find({ completed, deleted: { $ne: true } }).sort({ deadline: 1 });
     } catch (error) {
       throw new Error('Lỗi khi lọc công việc theo trạng thái');
     }
   }
-
-  // Các hàm lọc khác...
 }

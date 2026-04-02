@@ -24,7 +24,7 @@ export interface ITodo extends Document {
 // Định nghĩa cấu trúc lưu trữ trong MongoDB
 const TodoSchema: Schema = new Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     title: { type: String, required: true },
     description: { type: String, default: '' },
     completed: { type: Boolean, default: false },
