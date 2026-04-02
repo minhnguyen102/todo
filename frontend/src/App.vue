@@ -318,7 +318,8 @@ const loginLastName = ref('');
 // Lấy fullName từ localStorage, fallback về 'N/A'
 const currentFullName = ref(localStorage.getItem('fullName') || 'N/A');
 const currentUsername = ref(localStorage.getItem('username') || 'N/A');
-const AUTH_URL = 'http://localhost:3000/api/auth';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const AUTH_URL = `${API_BASE_URL}/api/auth`;
 
 const handleAuth = async () => {
   try {
