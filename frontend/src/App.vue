@@ -289,6 +289,7 @@ const loginUsername = ref('');
 const loginPassword = ref('');
 const loginFirstName = ref('');
 const loginLastName = ref('');
+const formErrors = ref<Record<string, string>>({}); // Biến hứng lỗi
 // Lấy fullName từ localStorage, fallback về 'N/A'
 const currentFullName = ref(localStorage.getItem('fullName') || 'N/A');
 const currentUsername = ref(localStorage.getItem('username') || 'N/A');
@@ -297,15 +298,37 @@ const AUTH_URL = `${API_BASE_URL}/api/auth`;
 
 const handleAuth = async () => {
   try {
+    formErrors.value = {}; // Reset lỗi
     const endpoint = isLoginMode.value ? '/login' : '/register';
     
+    // Frontend Validation
+    if (!loginUsername.value.trim() || !loginPassword.value.trim()) {
+      showToast('Vui lòng điền tài khoản và mật khẩu!', 'error');
+      return;
+    }
+
+    if (!isLoginMode.value) {
+      if (!loginFirstName.value.trim() || !loginLastName.value.trim()) {
+        showToast('Vui lòng điền đầy đủ Tên và Họ!', 'error');
+        return;
+      }
+      if (loginUsername.value.trim().length < 4) {
+        showToast('Tên đăng nhập (Username) phải dài ít nhất 4 ký tự!', 'error');
+        return;
+      }
+      if (loginPassword.value.trim().length < 6) {
+        showToast('Mật khẩu phải dài ít nhất 6 ký tự!', 'error');
+        return;
+      }
+    }
+
     const payload: any = {
-      username: loginUsername.value,
-      password: loginPassword.value
+      username: loginUsername.value.trim(),
+      password: loginPassword.value.trim()
     };
     if (!isLoginMode.value) {
-      payload.first_name = loginFirstName.value;
-      payload.last_name = loginLastName.value;
+      payload.first_name = loginFirstName.value.trim();
+      payload.last_name = loginLastName.value.trim();
     }
 
     const response = await axios.post(`${AUTH_URL}${endpoint}`, payload);
@@ -326,7 +349,17 @@ const handleAuth = async () => {
     showToast(isLoginMode.value ? '✅ Đăng nhập thành công!' : '🎉 Đăng ký thành công!');
     await fetchTodos();
   } catch (error: any) {
-    showToast(error.response?.data?.message || 'Có lỗi xảy ra', 'error');
+    // Xử lý lỗi mảng từ express-validator
+    if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+      error.response.data.errors.forEach((err: any) => {
+        if (err.path) {
+          formErrors.value[err.path] = err.msg;
+        }
+      });
+      showToast('Vui lòng kiểm tra lại thông tin nhập liệu!', 'error');
+    } else {
+      showToast(error.response?.data?.message || 'Có lỗi xảy ra', 'error');
+    }
   }
 };
 
@@ -341,6 +374,7 @@ const handleLogout = () => {
   loginPassword.value = '';
   loginFirstName.value = '';
   loginLastName.value = '';
+  formErrors.value = {};
   todos.value = []; // Xóa danh sách khi đăng xuất
   showToast('ℹ️ Đã đăng xuất', 'info');
 };
@@ -361,21 +395,25 @@ onMounted(() => {
         <template v-if="!isLoginMode">
           <div class="form-group">
             <label>Tên (First Name)</label>
-            <input v-model="loginFirstName" type="text" class="form-input" required placeholder="Tên" />
+            <input v-model="loginFirstName" type="text" class="form-input" placeholder="Tên" />
+            <span class="error-text" v-if="formErrors['first_name']">{{ formErrors['first_name'] }}</span>
           </div>
           <div class="form-group" style="margin-top: 15px;">
             <label>Họ (Last Name)</label>
-            <input v-model="loginLastName" type="text" class="form-input" required placeholder="Họ" />
+            <input v-model="loginLastName" type="text" class="form-input" placeholder="Họ" />
+            <span class="error-text" v-if="formErrors['last_name']">{{ formErrors['last_name'] }}</span>
           </div>
         </template>
 
         <div class="form-group" :style="{ 'margin-top': !isLoginMode ? '15px' : '0' }">
           <label>Tên đăng nhập</label>
-          <input v-model="loginUsername" type="text" class="form-input" required placeholder="Nhập username" />
+          <input v-model="loginUsername" type="text" class="form-input" placeholder="Nhập username (ít nhất 4 ký tự)" />
+          <span class="error-text" v-if="formErrors['username']">{{ formErrors['username'] }}</span>
         </div>
         <div class="form-group" style="margin-top: 15px;">
           <label>Mật khẩu</label>
-          <input v-model="loginPassword" type="password" class="form-input" required placeholder="Nhập password" />
+          <input v-model="loginPassword" type="password" class="form-input" placeholder="Nhập password (ít nhất 6 ký tự)" />
+          <span class="error-text" v-if="formErrors['password']">{{ formErrors['password'] }}</span>
         </div>
         <button type="submit" class="btn-new-task" style="margin-top: 25px; width: 100%;">
           {{ isLoginMode ? 'Đăng Nhập' : 'Đăng Ký' }}
@@ -866,6 +904,13 @@ onMounted(() => {
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.error-text {
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 5px;
+  display: block;
 }
 
 .app-layout {
